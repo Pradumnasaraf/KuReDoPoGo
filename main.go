@@ -32,7 +32,7 @@ func main() {
 	}
 	defer db.Close()
 
-	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, name TEXT NOT NULL, email TEXT NOT NULL);`)
+	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS users (id BIGSERIAL PRIMARY KEY NOT NULL, name VARCHAR(100) NOT NULL, email VARCHAR(50) NOT NULL);`)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -91,14 +91,14 @@ func createUser(db *sql.DB) gin.HandlerFunc {
 		var u User
 		err := ctx.BindJSON(&u)
 		if err != nil {
-			log.Fatal(err)
+			log.Print("Error while binding the JSON")
 		}
 		var id int
-		err = db.QueryRow(`INSERT INTO users (name email) VALUES($1, $2) RETURNING id`, u.Name, u.Email).Scan(&id)
+		err = db.QueryRow(`INSERT INTO users (name, email) VALUES($1, $2) RETURNING id`, u.Name, u.Email).Scan(&id)
 		if err != nil {
 			log.Fatal(err)
 		}
-		ctx.JSON(http.StatusCreated, fmt.Sprintf("User created with the ID: %b", id))
+		ctx.JSON(http.StatusCreated, fmt.Sprintf("User added with the ID: %d", id))
 	}
 }
 
@@ -126,7 +126,7 @@ func deleteUser(db *sql.DB) gin.HandlerFunc {
 		if err != nil {
 			log.Fatal(err)
 		}
-		ctx.JSON(http.StatusCreated, fmt.Sprintf("User updated with the ID: %s", id))
+		ctx.JSON(http.StatusCreated, fmt.Sprintf("User deleted with the ID: %s", id))
 	}
 }
 
