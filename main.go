@@ -32,9 +32,13 @@ func main() {
 	}
 	defer db.Close()
 
-	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, name TEXT NOT NULL, email TEXT NOT NULL)`)
+	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, name TEXT NOT NULL, email TEXT NOT NULL);`)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	router := gin.Default()
+	router.GET("/health", healthCheck())
 	router.GET("/users", getUsers(db))
 	router.GET("/users/:id", getUserById(db))
 	router.POST("/users", createUser(db))
@@ -123,5 +127,11 @@ func deleteUser(db *sql.DB) gin.HandlerFunc {
 			log.Fatal(err)
 		}
 		ctx.JSON(http.StatusCreated, fmt.Sprintf("User updated with the ID: %s", id))
+	}
+}
+
+func healthCheck() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		ctx.JSON(http.StatusOK, gin.H{"message": "OK"})
 	}
 }

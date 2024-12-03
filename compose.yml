@@ -10,15 +10,23 @@ services:
     env_file:
       - .env.example
     environment:
-      - DATABASE_URI=postgres://postgres:password@postgres:5432/mydb?sslmode=disable
+      DATABASE_URL: postgres://postgres:password@db:5432/mydb?sslmode=disable
     networks:
       - go-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      db:
+        condition: service_healthy
     develop:
       watch:
         - path: .
           action: rebuild
 
-  postgres:
+  db:
     container_name: postgres
     image: postgres:13
     ports:
@@ -29,6 +37,13 @@ services:
       POSTGRES_DB: mydb
     networks:
       - go-network
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
 
 volumes:
   postgres_data:
