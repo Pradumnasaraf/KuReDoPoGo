@@ -38,6 +38,7 @@ func main() {
 	}
 
 	router := gin.Default()
+
 	router.GET("/health", healthCheck())
 	router.GET("/users", getUsers(db))
 	router.GET("/users/:id", getUserById(db))
@@ -88,10 +89,20 @@ func getUserById(db *sql.DB) gin.HandlerFunc {
 
 func createUser(db *sql.DB) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
+		if ctx.ContentType() != "application/json" {
+			ctx.JSON(http.StatusBadRequest, gin.H{"message": "Content-Type must be application/json"})
+			return
+		}
+		if ctx.Request.Body == nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"message": "Request body is empty"})
+			return
+		}
+
 		var u User
 		err := ctx.BindJSON(&u)
-		if err != nil {
-			log.Print("Error while binding the JSON")
+		if err != nil || u.Name == "" || u.Email == "" {
+			ctx.JSON(http.StatusBadRequest, gin.H{"message": "Invalid JSON format"})
+			return
 		}
 		var id int
 		err = db.QueryRow(`INSERT INTO users (name, email) VALUES($1, $2) RETURNING id`, u.Name, u.Email).Scan(&id)
@@ -104,6 +115,14 @@ func createUser(db *sql.DB) gin.HandlerFunc {
 
 func updateUser(db *sql.DB) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
+		if ctx.ContentType() != "application/json" {
+			ctx.JSON(http.StatusBadRequest, gin.H{"message": "Content-Type must be application/json"})
+			return
+		}
+		if ctx.Request.Body == nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"message": "Request body is empty"})
+			return
+		}
 		var u User
 		id := ctx.Param("id")
 		err := ctx.BindJSON(&u)
