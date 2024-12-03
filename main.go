@@ -68,7 +68,6 @@ func getUserById(db *sql.DB) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		var u User
 		id := ctx.Param("id")
-		fmt.Println(id)
 		err := db.QueryRow(`SELECT * FROM users WHERE id = $1`, id).Scan(&u.ID, &u.Name, &u.Email)
 		if err != nil {
 			if err == sql.ErrNoRows {
@@ -83,15 +82,44 @@ func getUserById(db *sql.DB) gin.HandlerFunc {
 
 func createUser(db *sql.DB) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
+		var u User
+		err := ctx.BindJSON(&u)
+		if err != nil {
+			log.Fatal(err)
+		}
+		var id int
+		err = db.QueryRow(`INSERT INTO users (name email) VALUES($1, $2) RETURNING id`, u.Name, u.Email).Scan(&id)
+		if err != nil {
+			log.Fatal(err)
+		}
+		ctx.JSON(http.StatusCreated, fmt.Sprintf("User created with the ID: %b", id))
 	}
 }
 
 func updateUser(db *sql.DB) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
+		var u User
+		id := ctx.Param("id")
+		err := ctx.BindJSON(&u)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		_, execErr := db.Exec("UPDATE users SET name = $1, email = $2 WHERE id = $3", u.Name, u.Email, id)
+		if execErr != nil {
+			log.Fatal(execErr)
+		}
+		ctx.JSON(http.StatusCreated, fmt.Sprintf("User updated with the ID: %s", id))
 	}
 }
 
 func deleteUser(db *sql.DB) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
+		id := ctx.Param("id")
+		_, err := db.Exec("DELETE FROM users WHERE id = $1", id)
+		if err != nil {
+			log.Fatal(err)
+		}
+		ctx.JSON(http.StatusCreated, fmt.Sprintf("User updated with the ID: %s", id))
 	}
 }
