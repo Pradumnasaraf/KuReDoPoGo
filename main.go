@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -104,12 +105,11 @@ func createUser(db *sql.DB) gin.HandlerFunc {
 			ctx.JSON(http.StatusBadRequest, gin.H{"message": "Invalid JSON format"})
 			return
 		}
-		var id int
-		err = db.QueryRow(`INSERT INTO users (name, email) VALUES($1, $2) RETURNING id`, u.Name, u.Email).Scan(&id)
+		err = db.QueryRow(`INSERT INTO users (name, email) VALUES($1, $2) RETURNING id`, u.Name, u.Email).Scan(&u.ID)
 		if err != nil {
 			log.Fatal(err)
 		}
-		ctx.JSON(http.StatusCreated, fmt.Sprintf("User added with the ID: %d", id))
+		ctx.JSON(http.StatusCreated, u)
 	}
 }
 
@@ -124,17 +124,23 @@ func updateUser(db *sql.DB) gin.HandlerFunc {
 			return
 		}
 		var u User
-		id := ctx.Param("id")
-		err := ctx.BindJSON(&u)
+		intID, err := strconv.Atoi(ctx.Param("id"))
+		if err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"message": "Invalid ID"})
+			return
+		}
+		u.ID = intID
+
+		err = ctx.BindJSON(&u)
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		_, execErr := db.Exec("UPDATE users SET name = $1, email = $2 WHERE id = $3", u.Name, u.Email, id)
+		_, execErr := db.Exec("UPDATE users SET name = $1, email = $2 WHERE id = $3", u.Name, u.Email, u.ID)
 		if execErr != nil {
 			log.Fatal(execErr)
 		}
-		ctx.JSON(http.StatusCreated, fmt.Sprintf("User updated with the ID: %s", id))
+		ctx.JSON(http.StatusCreated, u)
 	}
 }
 
