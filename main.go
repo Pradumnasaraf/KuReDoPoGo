@@ -2,26 +2,28 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
+	"net/http"
 	"os"
 
-	random "github.com/Pallinder/go-randomdata"
+	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
 
-type Product struct {
-	Name      string
-	Price     float64
-	Available bool
+type User struct {
+	ID    int    `json:"id"`
+	Name  string `json:"name"`
+	Email string `json:"email"`
 }
 
 func main() {
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatal("Using system environment variables")
+		log.Print("Loading the Environment Variables from the system")
 	} else {
-		log.Println("Using .env file")
+		log.Print("Loading the Environment Variables from the .env file")
 	}
 
 	db, err := sql.Open("postgres", os.Getenv("DATABASE_URL"))
@@ -30,91 +32,66 @@ func main() {
 	}
 	defer db.Close()
 
-	if err = db.Ping(); err != nil {
-		log.Fatal(err)
-	} else {
-		log.Println("Connected to database")
-	}
+	router := gin.Default()
+	router.GET("/users", getUsers(db))
+	router.GET("/users/:id", getUserById(db))
+	router.POST("/users", createUser(db))
+	router.PUT("/users/:id", updateUser(db))
+	router.DELETE("/users/:id", deleteUser(db))
 
-	// Create a product table
-	createProductTable(db)
-
-	// Insert a product
-	product := Product{
-		Name:      random.SillyName(),
-		Price:     random.Decimal(10, 100),
-		Available: random.Boolean(),
-	}
-	pk := insertProduct(db, product)
-	log.Println("Product created with id:", pk)
-
-	// Get a Product
-
-	//getProducts(db)
-
-	// Get all Products
-
-	//getAllProducts(db)
+	log.Fatal(router.Run(":" + os.Getenv("PORT")))
 }
 
-func createProductTable(db *sql.DB) {
-	query := `CREATE TABLE IF NOT EXISTS product (
-		id SERIAL PRIMARY KEY,
-		name VARCHAR(100) NOT NULL,
-		price NUMERIC(6, 2) NOT NULL,
-		available BOOLEAN,
-		created Timestamp DEFAULT NOW()
-	)`
-	_, err := db.Exec(query)
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
-func insertProduct(db *sql.DB, product Product) int {
-	query := `INSERT INTO product (name, price, available) VALUES ($1, $2, $3) RETURNING id`
-	var pk int
-	err := db.QueryRow(query, product.Name, product.Price, product.Available).Scan(&pk)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return pk
-}
-
-func getProducts(db *sql.DB) {
-	var name string
-	var price float64
-	var available bool
-
-	query := `SELECT name, price, available FROM product WHERE id = $1`
-	pk := 1
-	err := db.QueryRow(query, pk).Scan(&name, &price, &available)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			log.Fatal("No product found with id:", pk)
-		}
-		log.Fatal(err)
-	}
-	log.Println("Product:", name, price, available)
-}
-
-func getAllProducts(db *sql.DB) {
-	date := []Product{}
-	rows, err := db.Query("SELECT name, price, available FROM product")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var name string
-		var price float64
-		var available bool
-		err := rows.Scan(&name, &price, &available)
+func getUsers(db *sql.DB) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		rows, err := db.Query(`SELECT * FROM users`)
 		if err != nil {
 			log.Fatal(err)
 		}
-		date = append(date, Product{name, price, available})
+		defer rows.Close()
+
+		users := []User{}
+		for rows.Next() {
+			var u User
+			err := rows.Scan(&u.ID, &u.Name, &u.Email)
+			if err != nil {
+				log.Fatal(err)
+			}
+			users = append(users, u)
+		}
+
+		ctx.JSON(http.StatusOK, users)
 	}
-	log.Println(date)
+}
+
+func getUserById(db *sql.DB) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		var u User
+		id := ctx.Param("id")
+		fmt.Println(id)
+		err := db.QueryRow(`SELECT * FROM users WHERE id = $1`, id).Scan(&u.ID, &u.Name, &u.Email)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				ctx.JSON(http.StatusNotFound, gin.H{"message": "User not found"})
+				return
+			}
+			log.Fatal(err)
+		}
+		ctx.JSON(http.StatusOK, u)
+	}
+}
+
+func createUser(db *sql.DB) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+	}
+}
+
+func updateUser(db *sql.DB) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+	}
+}
+
+func deleteUser(db *sql.DB) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+	}
 }
