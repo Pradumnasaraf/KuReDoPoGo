@@ -32,6 +32,8 @@ func main() {
 	}
 	defer db.Close()
 
+	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, name TEXT NOT NULL, email TEXT NOT NULL)`)
+
 	router := gin.Default()
 	router.GET("/users", getUsers(db))
 	router.GET("/users/:id", getUserById(db))
