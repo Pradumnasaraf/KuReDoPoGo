@@ -3,20 +3,18 @@ package controllers
 import (
 	"database/sql"
 	"fmt"
-	"log"
 	"net/http"
 	"strconv"
 
-	"github.com/gin-gonic/gin"
 	"github.com/Pradumnasaraf/kuredopogo/models"
-
+	"github.com/gin-gonic/gin"
 )
 
 func GetUsers(db *sql.DB) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		rows, err := db.Query(`SELECT * FROM users`)
 		if err != nil {
-			log.Fatal(err)
+			ctx.JSON(http.StatusInternalServerError, gin.H{"message": "Error occurred while fetching users"})
 		}
 		defer rows.Close()
 
@@ -25,7 +23,7 @@ func GetUsers(db *sql.DB) gin.HandlerFunc {
 			var u models.User
 			err := rows.Scan(&u.ID, &u.Name, &u.Email)
 			if err != nil {
-				log.Fatal(err)
+				ctx.JSON(http.StatusInternalServerError, gin.H{"message": "Error occurred while fetching users"})
 			}
 			users = append(users, u)
 		}
@@ -44,7 +42,7 @@ func GetUserById(db *sql.DB) gin.HandlerFunc {
 				ctx.JSON(http.StatusNotFound, gin.H{"message": "User not found"})
 				return
 			}
-			log.Fatal(err)
+			ctx.JSON(http.StatusInternalServerError, gin.H{"message": "Error occurred while fetching user"})
 		}
 		ctx.JSON(http.StatusOK, u)
 	}
@@ -69,7 +67,7 @@ func CreateUser(db *sql.DB) gin.HandlerFunc {
 		}
 		err = db.QueryRow(`INSERT INTO users (name, email) VALUES($1, $2) RETURNING id`, u.Name, u.Email).Scan(&u.ID)
 		if err != nil {
-			log.Fatal(err)
+			ctx.JSON(http.StatusInternalServerError, gin.H{"message": "Error occurred while creating user"})
 		}
 		ctx.JSON(http.StatusCreated, u)
 	}
@@ -95,12 +93,13 @@ func UpdateUser(db *sql.DB) gin.HandlerFunc {
 
 		err = ctx.BindJSON(&u)
 		if err != nil {
-			log.Fatal(err)
+			ctx.JSON(http.StatusBadRequest, gin.H{"message": "Invalid JSON format"})
+			return
 		}
 
 		_, execErr := db.Exec("UPDATE users SET name = $1, email = $2 WHERE id = $3", u.Name, u.Email, u.ID)
 		if execErr != nil {
-			log.Fatal(execErr)
+			ctx.JSON(http.StatusInternalServerError, gin.H{"message": "Error occurred while updating user"})
 		}
 		ctx.JSON(http.StatusCreated, u)
 	}
@@ -111,7 +110,8 @@ func DeleteUser(db *sql.DB) gin.HandlerFunc {
 		id := ctx.Param("id")
 		_, err := db.Exec("DELETE FROM users WHERE id = $1", id)
 		if err != nil {
-			log.Fatal(err)
+			ctx.JSON(http.StatusInternalServerError, gin.H{"message": "Error occurred while deleting user"})
+
 		}
 		ctx.JSON(http.StatusCreated, fmt.Sprintf("User deleted with the ID: %s", id))
 	}
