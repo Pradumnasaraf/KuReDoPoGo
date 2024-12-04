@@ -1,0 +1,53 @@
+services:
+  api:
+    container_name: go-app
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: go-app
+    ports:
+      - 8080:8080
+    env_file:
+      - .env.example
+    environment:
+      DATABASE_URL: postgres://postgres:password@db:5432/mydb?sslmode=disable
+    networks:
+      - go-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      db:
+        condition: service_healthy
+    develop:
+      watch:
+        - path: .
+          action: rebuild
+
+  db:
+    container_name: postgres
+    image: postgres:13
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: mydb
+    networks:
+      - go-network
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
+
+networks:
+  go-network:
+    driver: bridge
