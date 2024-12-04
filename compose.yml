@@ -1,6 +1,6 @@
 services:
-  api:
-    container_name: go-app
+  app:
+    container_name: app
     build:
       context: .
       dockerfile: Dockerfile
@@ -10,7 +10,8 @@ services:
     env_file:
       - .env.example
     environment:
-      DATABASE_URL: postgres://postgres:password@db:5432/mydb?sslmode=disable
+      DATABASE_URI: postgres://postgres:password@postgres:5432/mydb?sslmode=disable
+      REDIS_URI: redis:6379
     networks:
       - go-network
     healthcheck:
@@ -19,14 +20,16 @@ services:
       timeout: 5s
       retries: 5
     depends_on:
-      db:
+      postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     develop:
       watch:
         - path: .
           action: rebuild
 
-  db:
+  postgres:
     container_name: postgres
     image: postgres:13
     ports:
@@ -45,8 +48,25 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  redis:
+    container_name: redis
+    image: redis:7.4
+    volumes:
+      - redisdata:/data
+    ports:
+      - 6379:6379 
+    networks:
+      - go-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
 volumes:
   postgres_data:
+  redisdata:
 
 networks:
   go-network:
