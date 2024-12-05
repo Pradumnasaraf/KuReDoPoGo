@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: go-api-deployment
+  namespace: api
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: go-api
+  template:
+    metadata:
+      labels:
+        app: go-api
+    spec:
+      containers:
+      - name: go-api
+        image: pradumnasaraf/kuredopogo:latest
+        resources:
+          limits:
+            memory: "500Mi"
+            cpu: "500m"
+          requests:
+            memory: "500Mi"
+            cpu: "500m"
+        startupProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 15
+          periodSeconds: 60   
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 15
+          periodSeconds: 60
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 15
+          periodSeconds: 60
+        ports:
+        - containerPort: 8080
+        env:
+        - name: POSTGRES_URI
+          valueFrom:
+            secretKeyRef:
+              name: api-db-secret
+              key: postgresuri
+        - name: REDIS_URI
+          valueFrom:
+            secretKeyRef:
+              name: api-db-secret
+              key: redisuri
+        envFrom:
+        - configMapRef:
+            name: api-configmap
