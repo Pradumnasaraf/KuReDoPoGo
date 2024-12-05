@@ -19,7 +19,7 @@ func LoadEnv() {
 }
 
 func ConnectPostgres() *sql.DB {
-	db, err := sql.Open("postgres", os.Getenv("DATABASE_URI"))
+	db, err := sql.Open("postgres", os.Getenv("POSTGRES_URI"))
 	if err != nil {
 		log.Fatal("Failed to connect to database:", err)
 	}
