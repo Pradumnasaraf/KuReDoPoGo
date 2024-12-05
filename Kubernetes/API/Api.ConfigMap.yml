@@ -6,4 +6,4 @@ metadata:
 data:
   PORT: "8080"
   GIN_MODE: "release"
-  REDIS_RATE_LIMIT: "25"
+  REDIS_RATE_LIMIT: "10"

@@ -36,7 +36,23 @@ spec:
             command:
               - pg_isready
           initialDelaySeconds: 15
-          periodSeconds: 5        
+          periodSeconds: 5
+        env:
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: postgresusername
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: postgrespassword
+        - name: POSTGRES_DB
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: postgresdatabase
         volumeMounts:
         - name: postgres-persistent-storage
           mountPath: /var/lib/postgresql/data

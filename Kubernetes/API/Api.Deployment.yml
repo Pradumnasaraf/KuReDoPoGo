@@ -44,11 +44,11 @@ spec:
         ports:
         - containerPort: 8080
         env:
-        - name: POST
+        - name: POSTGRES_URI
           valueFrom:
             secretKeyRef:
               name: api-db-secret
-              key: mongouri
+              key: postgresuri
         - name: REDIS_URI
           valueFrom:
             secretKeyRef:
