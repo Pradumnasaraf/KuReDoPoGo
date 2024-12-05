@@ -13,6 +13,7 @@
 
 - [Golang](https://golang.org/)
 - [PostgreSQL](https://www.postgresql.org/)
+- [Redis](https://redis.io/)
 
 ## 💥 How to Contribute
 

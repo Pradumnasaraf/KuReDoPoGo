@@ -47,6 +47,28 @@ docker compose up --build --watch
 
 You can access the application at `http://localhost:8080` and Postgres at `http://localhost:5432`.
 
+### Using the API
+
+One the application is running, you can use the following endpoints to interact with the API. By default, the rate limit is set to 10 per hour. You can change this in the `.env` file.
+
+#### Endpoints
+
+- `GET /users`: Get all users
+- `GET /users/:id`: Get a user by ID
+- `POST /users`: Create a new user
+- `PUT /users/:id`: Update a user by ID
+- `DELETE /users/:id`: Delete a user by ID
+- `GET /health`: Get the health status of the application
+
+POST and PUT requests require a JSON body with the following structure:
+
+```json
+{
+  "name": "John Doe",
+  "email": "test@test.com"
+}
+```
+
 ## License
 
 This project is licensed under the [GNU General Public License v3.0](LICENSE).

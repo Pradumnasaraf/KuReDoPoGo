@@ -8,12 +8,10 @@ services:
     ports:
       - 8080:8080
     env_file:
-      - .env.example
-    environment:
+      - .env
+    environment: # Overriding the env_file values
       POSTGRES_URI: postgres://postgres:password@postgres:5432/mydb?sslmode=disable
       REDIS_URI: redis:6379
-    networks:
-      - go-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 10s
@@ -24,6 +22,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    networks:
+      - go-network
     develop:
       watch:
         - path: .
@@ -31,15 +31,13 @@ services:
 
   postgres:
     container_name: postgres
-    image: postgres:13
+    image: postgres:17.2
     ports:
       - 5432:5432
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
       POSTGRES_DB: mydb
-    networks:
-      - go-network
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "postgres"]
       interval: 10s
@@ -47,6 +45,8 @@ services:
       retries: 5
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - go-network
 
   redis:
     container_name: redis
@@ -55,14 +55,14 @@ services:
       - redisdata:/data
     ports:
       - 6379:6379 
-    networks:
-      - go-network
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 10s
       retries: 5
       start_period: 40s
+    networks:
+      - go-network
 
 volumes:
   postgres_data:
