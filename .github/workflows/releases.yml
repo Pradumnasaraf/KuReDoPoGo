@@ -1,4 +1,4 @@
-name: Create Release
+name: Create Release and Tag
 on:
   push:
     branches:
