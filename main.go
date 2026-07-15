@@ -14,7 +14,7 @@ func main() {
 	config.LoadEnv()
 
 	db := config.ConnectPostgres()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	middleware.RedisInit()
 	defer middleware.RedisClose()

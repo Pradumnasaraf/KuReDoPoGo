@@ -16,7 +16,7 @@ func GetUsers(db *sql.DB) gin.HandlerFunc {
 			ctx.JSON(http.StatusInternalServerError, gin.H{"message": "Error occurred while fetching users"})
 			return
 		}
-		defer rows.Close()
+		defer func() { _ = rows.Close() }()
 
 		users := []models.User{}
 		for rows.Next() {
