@@ -8,7 +8,7 @@ import (
 )
 
 func RegisterRoutes(router *gin.Engine, db *sql.DB) {
-	
+
 	router.GET("/health", controllers.HealthCheck())
 
 	router.GET("/users", controllers.GetUsers(db))
